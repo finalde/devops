@@ -1,0 +1,25 @@
+---
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: test debug
+      debug:
+        msg: Check we are running in the directory of the script
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: install git
+      tags: git
+      package:
+        name: git
+        state: latest
+
+    - name: install vscode
+      homebrew:
+        name: visual-studio-code
+        state: present
+
+    - name: install node
+      homebrew:
+        name: node
+        state: present

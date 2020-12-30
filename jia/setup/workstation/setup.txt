@@ -1,0 +1,7 @@
+https://github.com/geerlingguy/mac-dev-playbook
+https://blog.vandenbrand.org/2016/01/04/how-to-automate-your-mac-os-x-setup-with-ansible/
+
+steps:
+    install python3
+    install ansible => python3 -m pip install --user ansible
+    install ansible requirements => ansible-galaxy install -r requirements.yml

@@ -1,0 +1,123 @@
+---
+- name: Install MacOS Packages
+  hosts: localhost
+  become: false
+  vars:
+    brew_cask_packages:
+      - google-chrome
+    brew_packages:
+      - node
+    install_homebrew_if_missing: false
+    # python_modules:
+    #   - configparser
+    #   - pylint
+    #   - virtualenv
+    upgrade_homebrew_packages: false
+    dockitems_to_remove:
+      - Launchpad
+      - Mail
+      - Safari
+      - Contacts
+      - Notes
+      - Reminders
+      - Maps
+      - Photos
+      - Messages
+      - FaceTime
+      - iTunes
+      - iBooks
+      - App Store
+      - System Preferences
+      - Calendar
+
+    dockitems_to_persist:
+      - name: Google Chrome
+        path: "/Applications/Google Chrome.app"
+        pos: 1
+      - name: Firefox
+        path: "/Applications/Firefox.app"
+        pos: 2
+      - name: Wechat
+        path: /Applications/Wechat.app
+        pos: 3
+
+  pre_tasks:
+    - name: Ensuring Homebrew Is Installed
+      stat:
+        path: /usr/local/bin/brew
+      register: homebrew_check
+
+    - name: Fail If Homebrew Is Not Installed and install_homebrew_if_missing Is False
+      fail:
+        msg: Homebrew is missing...Install from http://brew.sh/
+      when:
+        - not homebrew_check.stat.exists
+        - not install_homebrew_if_missing
+
+    - name: Installing Homebrew
+      shell: /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+      when:
+        - not homebrew_check.stat.exists
+        - install_homebrew_if_missing
+
+  tasks:
+    - name: Updating Homebrew
+      homebrew:
+        update_homebrew: true
+      when: homebrew_check.stat.exists
+
+    - name: Upgrading Homebrew Packages
+      homebrew:
+        upgrade_all: "{{ upgrade_homebrew_packages }}"
+      register: result
+      until: result is successful
+      when: homebrew_check.stat.exists
+
+    - name: install dockutil
+      homebrew:
+        name: dockutil
+        state: present
+
+    - name: Installing wechat
+      command: brew install --cask wechat
+
+    - name: Installing google-chrome
+      command: brew install --cask google-chrome
+
+    - name: Installing firefox
+      command: brew install --cask firefox
+
+    - name: Installing visual-studio-code
+      command: brew install --cask visual-studio-code
+
+    - name: Remove all crap from Dock
+      shell: dockutil --remove '{{ item }}'
+      ignore_errors: true
+      with_items: "{{ dockitems_to_remove }}"
+
+    - name: Check if items in dock exist
+      shell: dockutil --find '{{ item.name }}' || dockutil --add '{{ item.path }}'
+      with_items: "{{ dockitems_to_persist }}"
+
+    - name: Fix order
+      shell: dockutil --move '{{ item.name }}' --position {{ item.pos }}
+      with_items: "{{ dockitems_to_persist }}"
+    # - name: Installing Homebrew Cask Packages
+    #   homebrew_cask:
+    #     name: "{{ brew_cask_packages }}"
+    #     state: present
+    #   register: result
+    #   until: result is successful
+    #   when: homebrew_check.stat.exists
+    # - name: Installing Homebrew Packages
+    #   homebrew:
+    #     name: "{{ brew_packages }}"
+    #     state: present
+    #   register: result
+    #   until: result is successful
+    #   when: homebrew_check.stat.exists
+    # - name: Installing Python Modules
+    #   pip:
+    #     name: "{{ item }}"
+    #     state: present
+    #   with_items: '{{ python_modules }}'
